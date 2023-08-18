@@ -247,7 +247,7 @@ format_target_partitions(){
 	mkfs.${newfstype[$thispart]} -$formatoptions ${part[$thispart]} > /dev/null || { echoreden "Failed to format ${part[$thispart]}"; echoredcn "无法格式化 ${part[$thispart]}"; exit 1; }
 	disk=`expr substr ${part[$thispart]} 1 8`
 	num=${part[$thispart]#$disk}
-	sfdisk -c -f $disk $num 83
+	sfdisk --part-type -f $disk $num linux
 	done
 
 	[ "${part[$swappart]}" = "" ] && return
@@ -258,7 +258,7 @@ format_target_partitions(){
 	mkswap ${part[$swappart]} || { echoreden "Failed to format ${part[$swappart]}"; echoredcn "无法格式化 ${part[$swappart]}"; exit 1; }
 	disk=`expr substr ${part[$swappart]} 1 8`
 	num=${part[$swappart]#$disk}
-	sfdisk -c -f $disk $num 82
+	sfdisk --part-type -f $disk $num swap
 }
 
 chkuuids(){
@@ -346,7 +346,6 @@ generate_fstab(){
 	echo "# /etc/fstab: static file system information." > "$targetfstab"
 	echo "#" >> "$targetfstab"
 	echo "# <file system> <mount point>   <type>  <options>       <dump>  <pass>" >> "$targetfstab"
-	echo "proc            /proc           proc    defaults        0       0" >> "$targetfstab"
 
 	for i in $tgtmnt; do
 	[ "${i#/dev/}" != "$i" ] && { echo "# $i" >> "$targetfstab"; j=$i; continue; }
@@ -380,7 +379,7 @@ generate_fstab(){
 	[ "$thisresume" -gt "$lastresume" ] && echo "RESUME=$partition" > $tgt/etc/initramfs-tools/conf.d/resume
 	done
 
-	echo "/dev/scd0 /media/cdrom0 udf,iso9660 user,noauto,exec,utf8 0 0" >> "$targetfstab"
+#	echo "/dev/scd0 /media/cdrom0 udf,iso9660 user,noauto,exec,utf8 0 0" >> "$targetfstab"
 }
 
 makelostandfound(){ # If lost+found is removed from an ext? FS, create it with the command mklost+found. Don't just mkdir lost+found
