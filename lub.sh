@@ -61,13 +61,13 @@ echoen(){
 }
 
 packagecheck_b(){
-	echo "Info: no need to install lupin-casper in KALI."
-
-	dpkg -l | grep ^ii | sed 's/[ ][ ]*/ /g' | cut -d " " -f 2 | grep ^squashfs-tools$ > /dev/null || { echoreden "squashfs-tools is required to run this program. You can install it by typing:\nsudo apt-get install squashfs-tools\nYou may need a working internet connection to do that."; echoredcn "要运行此程序必须先安装 squashfs-tools。你可以用如下命令安装:\nsudo apt-get install squashfs-tools\n这需要连上互联网。"; exit 1; }
+	dpkg -l | grep ^ii | sed 's/[ ][ ]*/ /g' | cut -d " " -f 2 | grep ^squashfs-tools$ > /dev/null || { echoreden "squashfs-tools is required to run this program. You can install it by typing:\nsudo apt install squashfs-tools\nYou may need a working internet connection to do that."; echoredcn "要运行此程序必须先安装 squashfs-tools。你可以用如下命令安装:\nsudo apt install squashfs-tools\n这需要连上互联网。"; exit 1; }
+	dpkg -l | grep ^ii | sed 's/[ ][ ]*/ /g' | cut -d " " -f 2 | grep ^casper$ > /dev/null || { echoreden "casper is required to run this program. You can install it by typing:\nsudo apt install casper\nYou may need a working internet connection to do that."; echoredcn "要运行此程序必须先安装 casper。你可以用如下命令安装:\nsudo apt install casper\n这需要连上互联网。"; exit 1; }
+	dpkg -l | grep ^ii | sed 's/[ ][ ]*/ /g' | cut -d " " -f 2 | grep ^parted$ > /dev/null || { echoreden "parted is required to run this program. You can install it by typing:\nsudo apt install parted\nYou may need a working internet connection to do that."; echoredcn "要运行此程序必须先安装 parted。你可以用如下命令安装:\nsudo apt install parted\n这需要连上互联网。"; exit 1; }
 }
 
 packagecheck_r(){
-	dpkg -l | grep ^ii | sed 's/[ ][ ]*/ /g' | cut -d " " -f 2 | grep ^parted$ > /dev/null || { echoreden "parted is required to run this program. You can install it by typing:\nsudo apt-get install parted\nYou may need a working internet connection to do that."; echoredcn "要运行此程序必须先安装 parted。你可以用如下命令安装:\nsudo apt-get install parted\n这需要连上互联网。"; exit 1; }
+	dpkg -l | grep ^ii | sed 's/[ ][ ]*/ /g' | cut -d " " -f 2 | grep ^parted$ > /dev/null || { echoreden "parted is required to run this program. You can install it by typing:\nsudo apt install parted\nYou may need a working internet connection to do that."; echoredcn "要运行此程序必须先安装 parted。你可以用如下命令安装:\nsudo apt install parted\n这需要连上互联网。"; exit 1; }
 }
 
 rebuildtree(){ # Remounting the linux directories effectively excludes removable media, manually mounted devices, windows partitions, virtual files under /proc, /sys, /dev, the /host contents of a wubi install, etc. If your partition scheme is more complicated than listed below, you must add lines to rebuildtree() and destroytree(), otherwise the backup will be partial.
@@ -408,61 +408,44 @@ makeswapfile(){
 	echo "${sf#$*}  none  swap  sw  0 0" >> "$*/etc/fstab"
 }
 
-sqshboot_menulst(){ # Generate a windows-notepad-compatible menu.lst in the backup directory with instructions to boot backup.squashfs directly.
-	[ $lang = "cn" ] && echo -e "# 这个 menu.lst 是给 grub4dos 用的。稍作修改才能用于 gnu grub\r
-\r
-\r
-# 如何在 windows 机器上直接启动你的 backup$today.squashfs:\r
-# 从 http://download.gna.org/grub4dos 下载最新的 grub4dos\r
-# 解压下载的 grub4dos, 并拷贝其中的 grldr 和 grldr.mbr 到 c: 盘根目录\r
-# 把这个 menu.lst 也拷贝到 c: 盘根目录\r
-# 然后在任意 fat ntfs ext 分区根目录建立一个 \"casper\" 目录并拷贝 backup$today.squashfs, initrd.img-`uname -r`, vmlinuz-`uname -r` 到它里面\r
-# 接着添加下面这行文字到 boot.ini 末尾 (不包含#号)\r
-# c:\grldr.mbr=\"grub4dos\"\r
-##### 对于 Windows Vista, 可以自行建立一个 boot.ini 文件，写上:\r
-##### [boot loader]\r
-##### [operating systems]\r
-##### c:\grldr.mbr=\"grub4dos\"\r
-# 重启选择 grub4dos 即可\r
-\r
-\r
-# 如何在 linux 机器上直接启动你的 backup$today.squashfs:\r
-# 在任意 fat ntfs ext 分区根目录建立一个 \"casper\" 文件夹并拷贝 backup$today.squashfs, initrd.img-`uname -r`, vmlinuz-`uname -r` 到它里面(注意 gnu grub 不能读取 NTFS, 因此不能把 initrd.img-`uname -r`, vmlinuz-`uname -r` 放在那里，不过依然可以把 squashfs 放在那里)\r
-# 然后拷贝下面的两个 Live Ubuntu Backup 启动项到 /boot/grub/menu.lst 末尾并把 \"find --set-root\" 行改为 \"root (hd?,?)\" (你创建 \"casper\" 文件夹的那个分区)\r" || echo -e "# This menu.lst is for grub4dos only. You must edit it to use with gnu grub\r
-\r
-\r
-# Instructions to boot your backup$today.squashfs directly on a windows PC:\r
-# Download the latest grub4dos from http://download.gna.org/grub4dos\r
-# Unzip grub4dos, then copy grldr and grldr.mbr to the root of your c: drive\r
-# Also copy this menu.lst to the root of your c: drive\r
-# Then make a directory \"casper\" under the root of any fat, ntfs, or ext partition and copy backup$today.squashfs, initrd.img-`uname -r`, vmlinuz-`uname -r` to the directory\r
-# Then add this line to boot.ini (without #)\r
-# c:\grldr.mbr=\"grub4dos\"\r
-##### On Windows Vista, you can still create a boot.ini yourself with these lines:\r
-##### [boot loader]\r
-##### [operating systems]\r
-##### c:\grldr.mbr=\"grub4dos\"\r
-# Reboot and select grub4dos\r
-\r
-\r
-# Instructions to boot your backup$today.squashfs directly on a linux PC:\r
-# Make a directory \"casper\" under the root of any fat, ntfs, or ext partition and copy backup$today.squashfs, initrd.img-`uname -r`, vmlinuz-`uname -r` to the directory. (Note that NTFS is not readable by gnu grub so don't put initrd.img-`uname -r` & vmlinuz-`uname -r`  there)\r
-# Then copy the Live Ubuntu Backup entries below to the end of your /boot/grub/menu.lst file and change the \"find --set-root\" line to \"root (hd?,?)\" (where you created the directory \"casper\")\r"
+sqshboot_grubcfg(){ # Generate a windows-notepad-compatible menu.lst in the backup directory with instructions to boot backup.squashfs directly.
+	[ $lang = "cn" ] && echo -e "# 这个 grub.cfg 用于启动live CD
 
-echo -e "\r
-\r
-default	0\r
-timeout 10\r
-\r
-title Live Ubuntu Backup $today\r
-find --set-root /casper/vmlinuz-`uname -r`\r
-kernel /casper/vmlinuz-`uname -r` boot=casper ro ignore_uuid\r
-initrd /casper/initrd.img-`uname -r`\r
-\r
-title Live Ubuntu Backup $today, Recovery Mode\r
-find --set-root /casper/vmlinuz-`uname -r`\r
-kernel /casper/vmlinuz-`uname -r` boot=casper ro single ignore_uuid\r
-initrd /casper/initrd.img-`uname -r`\r"
+
+# 如何在 linux 机器上直接启动你的 backup$today.squashfs:
+# 使用rufus制作grub2.0(x)U盘启动盘, 
+# 	1. 文件系统: FAT32
+# 	2. 在根目录建立一个 \"casper\" 文件夹
+#	3. 拷贝 backup$today.squashfs, initrd.img-`uname -r`, vmlinuz-`uname -r` 到 \"casper\" 
+# 	4. 拷贝 boot 文件夹到根目录\r
+# 如果使用linux平台制作grub启动盘，则需要更改root
+
+# Instructions to boot your backup$today.squashfs directly on a linux PC:
+# use rufus make grub2.0(x) boot u disk
+# 	1. filesystem: FAT32
+#	2. create \"casper\" file folder on root
+#	3. copy backup$today.squashfs, initrd.img-`uname -r`, vmlinuz-`uname -r` to \"casper\" 
+#	4. copy boot folder to root
+# you may need to change the root if you use linux platform to make a boot disk
+"
+
+echo -e "
+
+set timeout=30
+loadfont unicode
+set menu_color_normal=white/black
+set menu_color_highlight=black/light-gray
+
+menuentry "Live Ubuntu Backup $today" {
+	set gfxpayload=keep
+	set root=(hd0,msdos1)
+	linux	/casper/vmlinuz-`uname -r` boot=casper
+	initrd	/casper/initrd.img-`uname -r`
+}
+menuentry 'Test memory' {
+	linux16 /boot/memtest86+.bin
+}
+"
 }
 
 windowsentry(){
@@ -606,7 +589,7 @@ If you don't specify, the backup will be saved to /$backupdir"
 	rm $exclude
 	cp /boot/initrd.img-`uname -r` "/$backupdir"
 	cp /boot/vmlinuz-`uname -r` "/$backupdir"
-	sqshboot_menulst > "/$backupdir/menu.lst"
+	sqshboot_grubcfg > "/$backupdir/gurb.cfg"
 	thisuser=`basename ~`
 	chown -R $thisuser:$thisuser "/$backupdir" 2> /dev/null
 	echoreden "Your backup is ready in /$backupdir. Please read the menu.lst inside :)"
@@ -794,5 +777,6 @@ lang=cn
 [ "$*" = -h ] && { echoen "Root privileges are required for running this program.";echocn "备份和恢复需要 root 权限。";echohelpen; echohelpcn; exit 0; }
 [ "$*" = -b ] && { dobackup; exit 0; }
 [ "$*" = -r ] && { dorestore; exit 0; }
+[ "$*" = -t ] && { sqshboot_grubcfg > "grub.cfg"; exit 0; }
 exit 1
 

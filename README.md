@@ -4,18 +4,19 @@
 要恢复的时候, 从备份文件启动并再次运行本程序。
 可以把备份文件恢复到另一台机器。
 可以把虚拟机里的 ubuntu 迁移到真机。
-
+## 分区
+* 可以使用 `partition.sh` 来快速分区，其默认GPT分区，并且设置 `bios_grub` 为 `on` 。
+* 若硬盘有LVM分区，请先手动卸载。
 ## 安装:
-只要拷贝此脚本到任何地方并赋予执行权限即可。
-我喜欢把它放在 /usr/local/bin 里面, 这样每次运行的时候就不用写绝对路径了。
+拷贝此脚本到任何地方并赋予执行权限。
 
 ## 使用:
 必须使用sudo才能确保有足够的权限，否则某些文件会丢失。
-> 备份
-sudo ./lub -b
+### 备份 
+`sudo ./lub -b `
 
-> 恢复
-sudo ./lub -r
+### 恢复 
+`sudo ./lub -r`
 
 ## 依赖
 * squashfs-tools，打包squashfs文件
@@ -34,7 +35,7 @@ sudo ./lub -b
 小心: 你必须确定有足够的空间来存放备份。
 脚本将会生成启动所需的另外几个文件。
 阅读在备份存放目录生成的 grub.cfg，里面会详细告诉你如何从备份文件直接启动。
-## 制作liveCD
+## 制作Live CD
 * 使用rufus制作gurb2.0启动盘。
 * U盘根目录新建casper文件夹，copy *.squashfs, initrd, vmlinuz到casper文件夹。
 * copy boot文件夹到U盘中。
