@@ -400,7 +400,7 @@ makeswapfile(){
 	swapsize=`expr $swapsize + 0 2> /dev/null`
 	[ "$swapsize" = "" ] && swapsize=512
 	[ "$swapsize" = "0" ] && swapsize=512
-	local sf=`new_dir $*/swapfile`
+	local sf=`new_dir $*/swap.img`
 	echoreden "Generating swap file..."
 	echoredcn "正在创建 swap 文件..."
 	dd if=/dev/zero of=$sf bs=1M count=$swapsize
@@ -479,22 +479,6 @@ windowsentry(){
 	umount $i
 	rmdir $tmpdir
 	done
-}
-
-grub1(){
-	grub-install --root-directory="$tgt" $grubdev
-	grub-install --root-directory="$tgt" $grubdev
-	# grub-install (onto reiserfs) sometimes fails for unknown reason. Installing it twice succeeds most of the time.
-	target_cmd "$tgt" update-grub -y
-	sed -i "s/^hiddenmenu/#hiddenmenu/" $tgt/boot/grub/menu.lst
-	windowsentry
-}
-
-grub2(){
-	target_cmd "$tgt" grub-install $grubdev
-	target_cmd "$tgt" grub-install $grubdev
-	# grub-install onto reiserfs still buggy in grub2. Installing it twice fixs problems.
-	target_cmd "$tgt" update-grub
 }
 
 cleartgtmnt(){
@@ -694,8 +678,10 @@ dorestore(){
 
 	if [ "${grubdev#/dev/}" != "$grubdev" ]; then
 	mv $tgt/boot/grub `new_dir $tgt/boot/grub.old` 2> /dev/null
-	grub-install -v | grep 0. > /dev/null && grub1
-	grub-install -v | grep 1. > /dev/null && grub2
+	echo "grub install: installing grub to part ${part[$rootpart]} and disk `expr substr ${part[$rootpart]} 1 8`"
+	grub-install --boot-directory=$tgt/boot `expr substr ${part[$rootpart]} 1 8`
+	echo "grub mkconfig: making grub.cfg to boot/grub"
+	target_cmd "$tgt" grub-mkconfig -o /boot/grub/grub.cfg
 	fi
 
 	makelostandfound
@@ -768,9 +754,7 @@ dorestore(){
 }
 
 echohelpen(){
-[ $lang = "en" ] && echo "live ubuntu backup $version, copyleft billbear <billbear@gmail.com>
-
-This program can backup your running ubuntu system to a compressed, bootable squashfs file. When you want to restore, boot the squashfs backup and run this program again. You can also restore the backup to another machine. And with this script you can migrate ubuntu system on a virtual machine to physical partitions.
+[ $lang = "en" ] && echo "This program can backup your running ubuntu system to a compressed, bootable squashfs file. When you want to restore, boot the squashfs backup and run this program again. You can also restore the backup to another machine. And with this script you can migrate ubuntu system on a virtual machine to physical partitions.
 
 Install:
 Just copy this script anywhere and allow execution of the script.
@@ -783,9 +767,7 @@ sudo ./lub -r"
 }
 
 echohelpcn(){
-[ $lang = "cn" ] && echo "live ubuntu backup $version, copyleft billbear <billbear@gmail.com>
-
-本程序将帮助你备份运行中的 ubuntu 系统为一个可启动的 squashfs 压缩备份文件。
+[ $lang = "cn" ] && echo "本程序将帮助你备份运行中的 ubuntu 系统为一个可启动的 squashfs 压缩备份文件。
 要恢复的时候, 从备份文件启动并再次运行本程序。
 可以把备份文件恢复到另一台机器。
 可以把虚拟机里的 ubuntu 迁移到真机。
@@ -803,7 +785,7 @@ sudo ./lub -r"
 
 ls /sbin/vol_id > /dev/null 2>&1 && VOL_ID=vol_id || VOL_ID=VOL_ID
 ##echo -e "\033[31me\033[0mnglish/\033[31mc\033[0mhinese?"
-echo "live ubuntu backup"
+echo "live ubuntu backup and restore"
 ##read lang
 ##[ "$lang" = "c" ] && lang=cn || lang=en
 lang=cn
