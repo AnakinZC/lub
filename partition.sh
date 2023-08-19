@@ -10,13 +10,23 @@ lang=cn
 BIOS_START=1M
 BIOS_END=2M
 
-RM_START=2M
-RM_END=100%
+P1_START=2M
+P1_END=100%
+
+#P2_START=10G
+#P2_END=20G
+
+#P3_START=20G
+#P3_END=100%
 
 parted --script $* mklabel gpt \
  mkpart primary ext4 $BIOS_START $BIOS_END \
  set 1 bios_grub on \
- mkpart primary ext4 $RM_START $RM_END \
+ mkpart primary ext4 $P1_START $P1_END \
+# mkpart primary ext4 $P2_START $P2_END \
+# mkpart primary ext4 $P3_START $P3_END \
 
 mkfs.ext4 $*'1'
 mkfs.ext4 $*'2'
+#mkfs.ext4 $*'3'
+#mkfs.ext4 $*'4'
