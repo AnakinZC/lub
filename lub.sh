@@ -768,148 +768,49 @@ dorestore(){
 }
 
 echohelpen(){
-	[ $lang = "en" ] && echo "live ubuntu backup $version, copyleft billbear <billbear@gmail.com>
+[ $lang = "en" ] && echo "live ubuntu backup $version, copyleft billbear <billbear@gmail.com>
 
-This program can backup your running ubuntu system to a compressed, bootable squashfs file. When you want to restore, boot the squashfs backup and run this program again. You can also restore the backup to another machine. And with this script you can migrate ubuntu system on a virtual machine or a wubi installation to physical partitions.
+This program can backup your running ubuntu system to a compressed, bootable squashfs file. When you want to restore, boot the squashfs backup and run this program again. You can also restore the backup to another machine. And with this script you can migrate ubuntu system on a virtual machine to physical partitions.
 
 Install:
-Just copy this script anywhere and allow execution of the script. I put this script under /usr/local/bin, so that I don't have to type the path to this script everytime.
+Just copy this script anywhere and allow execution of the script.
 
 Use:
-sudo /path/to/this/script -b
-to backup or
-sudo /path/to/this/script -r
+to backup
+sudo ./lub -b
 to restore
-You can also type
-sudo bash /path/to/this/script -b
-or
-sudo bash /path/to/this/script -r
-
-Note that
-sudo sh /path/to/this/script -b
-and
-sudo sh /path/to/this/script -r
-will not work.
-
-Backup:
-squashfs-tools is required for this program to backup your system. lupin-casper is required to make a bootable backup.
-You can install them by typing
-sudo apt-get install squashfs-tools lupin-casper
-in a terminal.
-Then you can backup your running ubuntu system by typing
-sudo /path/to/this/script -b
-If you put this script under /usr/local/bin, just type
-sudo `basename $mypath` -b
-and follow the instructions.
-You can specify where to save the backup, files/folders you want to exclude from the backup.
-You don't need to umount external media, windows partitions, or any manually mounted partitions. They will be automatically ignored. Therefore you can save the backup to external media, windows partitions, etc.
-Waring: You must make sure you have enough space to save the backup.
-The program will generate other files needed for booting the backup. Read the menu.lst file the program generated under the backup folder for details on how to boot the backup.
-
-Restore:
-Read the menu.lst file the program generated under the backup folder for details on how to boot the backup.
-After booting into the live ubuntu backup, open a terminal and type
-sudo /path/to/this/script -r
-If you have put this script under /usr/local/bin when backup, now just type
-sudo `basename $mypath` -r
-and follow the instructions.
-Note: This program does not provide a partitioner (it can only format partitions but cannot create, delete, or resize partitions). The backup can be restored to existing partitions. So it is recommended that you include gparted in the backup. And if the partition table has any error, you will not be able to restore the backup until the errors are fixed.
-You can specify partitions and mount points, if you have no swap partition, the program will make a swap file for you if you tell it to do so. It will generate new fstab and install grub. It can also change the hostname, username and password if you tell it to do so." | more
+sudo ./lub -r"
 }
 
 echohelpcn(){
-	[ $lang = "cn" ] && echo "live ubuntu backup $version, copyleft billbear <billbear@gmail.com>
+[ $lang = "cn" ] && echo "live ubuntu backup $version, copyleft billbear <billbear@gmail.com>
 
 本程序将帮助你备份运行中的 ubuntu 系统为一个可启动的 squashfs 压缩备份文件。
 要恢复的时候, 从备份文件启动并再次运行本程序。
 可以把备份文件恢复到另一台机器。
 可以把虚拟机里的 ubuntu 迁移到真机。
-可以把 wubi 安装的系统迁移到真分区。
 
 安装:
 只要拷贝此脚本到任何地方并赋予执行权限即可。
-我喜欢把它放在 /usr/local/bin 里面, 这样每次运行的时候就不用写绝对路径了。
 
 使用:
-sudo 到此脚本的路径 -b
-是备份，而
-sudo 到此脚本的路径 -r
-是恢复。
-也可以用
-sudo bash 到此脚本的路径 -b
-和
-sudo bash 到此脚本的路径 -r
-
-注意不能用
-sudo sh 到此脚本的路径 -b
-和
-sudo sh 到此脚本的路径 -r
-
-备份:
-程序依赖 squashfs-tools 来工作。
-另外必须安装 lupin-casper 才能做出可启动的备份来。
-在终端用如下命令来安装它们:
-sudo apt-get install squashfs-tools lupin-casper
-而后就可以用这样的命令来备份运行中的 ubuntu 系统了:
-sudo 到此脚本的路径 -b
-如果这个脚本在 /usr/local/bin, 只要这样
-sudo `basename $mypath` -b
-然后根据提示进行就可以了。
-你可以指定存放备份的路径, 以及需要排除的文件和目录。
-不必卸载移动硬盘, windows 分区, 或任何你手动挂载了的分区。它们将会自动被忽略。
-因此你可以直接存放备份到移动硬盘, windows 分区等等。
-小心: 你必须确定有足够的空间来存放备份。
-脚本将会生成启动所需的另外几个文件。
-阅读在备份存放目录生成的 menu.lst，里面会详细告诉你如何从备份文件直接启动。
-
-恢复:
-阅读在备份存放目录生成的 menu.lst，里面会详细告诉你如何从备份文件直接启动。
-启动了 live ubuntu backup 之后, 打开一个终端输入
-sudo 到此脚本的路径 -r
-如果在备份时已经把此脚本放到了 /usr/local/bin, 现在只需敲入
-sudo `basename $mypath` -r
-并根据提示进行恢复就可以了。
-注意:此脚本并不提供分区功能(只能格式化分区但不能创建,删除分区或调整分区大小)。
-只能恢复备份到已有的分区。
-因此建议在备份前安装 gparted，这样恢复时你就有分区工具可用了。
-另外如果分区表有错误, 将不允许恢复备份，直到错误被修复。
-你可以指定若干分区和它们的挂载点。
-如果没有 swap 分区, 可以为你创建一个 swap 文件 (如果你这样要求的话)。
-会自动生成新的 fstab 并安装 grub。
-如果有必要, 还可以改变主机名, 用户名和密码。" | more
+备份
+sudo ./lub -b
+恢复
+sudo ./lub -r"
 }
 
-
-echousage(){
-	[ $lang = "cn" ] && echo "用法:
-备份:
-sudo bash $mypath -b
-恢复:
-sudo bash $mypath -r
-帮助:
-bash $mypath -h" || echo "Usage:
-sudo bash $mypath -b
-to backup;
-or
-sudo bash $mypath -r
-to restore;
-or
-bash $mypath -h
-to view help."
-}
 
 ls /sbin/vol_id > /dev/null 2>&1 && VOL_ID=vol_id || VOL_ID=VOL_ID
 ##echo -e "\033[31me\033[0mnglish/\033[31mc\033[0mhinese?"
-echo "live ubuntu backup - mod for Kali,by Rush"
+echo "live ubuntu backup"
 ##read lang
 ##[ "$lang" = "c" ] && lang=cn || lang=en
 lang=cn
 [ "$lang" = "cn" ] && today=`date +%Y.%m.%d` || today=`date +%d.%m.%Y`
 [ "$lang" = "cn" ] && version="V2.2, 2009年11月4日" || version="V2.2, Nov 4th,2009"
-[ "$*" = -h ] && { echohelpen; echohelpcn; exit 0; }
-[ "`id -u`" != 0 ] && { echoen "Root privileges are required for running this program."; echocn "备份和恢复需要 root 权限。"; echousage; exit 1; }
+[ "$*" = -h ] && { echoen "Root privileges are required for running this program.";echocn "备份和恢复需要 root 权限。";echohelpen; echohelpcn; exit 0; }
 [ "$*" = -b ] && { dobackup; exit 0; }
 [ "$*" = -r ] && { dorestore; exit 0; }
-echousage
 exit 1
 
