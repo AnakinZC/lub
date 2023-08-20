@@ -436,7 +436,7 @@ loadfont unicode
 set menu_color_normal=white/black
 set menu_color_highlight=black/light-gray
 
-menuentry "Live Ubuntu Backup $today" {
+menuentry \"Live Ubuntu Backup $today\" {
 	set gfxpayload=keep
 	set root=(hd0,msdos1)
 	linux	/casper/vmlinuz-`uname -r` boot=casper
