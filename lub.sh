@@ -589,12 +589,12 @@ If you don't specify, the backup will be saved to /$backupdir"
 	rm $exclude
 	cp /boot/initrd.img-`uname -r` "/$backupdir"
 	cp /boot/vmlinuz-`uname -r` "/$backupdir"
-	sqshboot_grubcfg > "/$backupdir/gurb.cfg"
+	sqshboot_grubcfg > "/$backupdir/grub.cfg"
 	thisuser=`basename ~`
 	chown -R $thisuser:$thisuser "/$backupdir" 2> /dev/null
-	echoreden "Your backup is ready in /$backupdir. Please read the menu.lst inside :)"
+	echoreden "Your backup is ready in /$backupdir. Please read the grub.cfg inside :)"
 	echoreden " started at: $stime\nfinished at: `date`"
-	echoredcn "已备份至 /$backupdir。请阅读里面的 menu.lst :)"
+	echoredcn "已备份至 /$backupdir。请阅读里面的 grub.cfg :)"
 	echoredcn "开始于: $stime\n结束于: `date`"
 	tput bel
 }
