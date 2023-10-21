@@ -12,11 +12,18 @@
 
 ## 使用:
 必须使用sudo才能确保有足够的权限，否则某些文件会丢失。
-### 备份 
-`sudo ./lub -b `
+### 备份系统为squashfs
+`sudo ./lub -b `只备份系统为squashfs
+
+### 备份为live USB
+`sudo ./lub -l`
+会检查依赖包，并且生成squashfs, vmlinuz, initrd, grub.cfg
 
 ### 恢复 
 `sudo ./lub -r`
+
+### 自动安装
+`sudo ./lub -i`依赖`partition.sh`和`lub_auto_install.conf`
 
 ## 依赖
 * squashfs-tools，打包squashfs文件
@@ -27,15 +34,15 @@
 
 `sudo apt install squashfs-tools casper  parted`
 
-## 备份:
-sudo ./lub -b
+## live USB:
+sudo ./lub -l
 
 根据提示进行就可以了。
 你可以指定存放备份的路径, 以及需要排除的文件和目录。
 小心: 你必须确定有足够的空间来存放备份。
 脚本将会生成启动所需的另外几个文件。
 阅读在备份存放目录生成的 grub.cfg，里面会详细告诉你如何从备份文件直接启动。
-## 制作Live CD
+## 制作Live USB
 * 使用rufus制作gurb2.0启动盘。
 * U盘根目录新建casper文件夹，copy *.squashfs, initrd, vmlinuz到casper文件夹。
 * copy boot文件夹到U盘中。
