@@ -476,6 +476,130 @@ cleartgtmnt(){
 	umount ${part[$rootpart]} || { echoreden "Please umount $tgt yourself"; echoredcn "请自行卸载 $tgt"; }
 }
 
+
+dobackup1(){
+	bindingdir=`new_dir /tmp/bind`
+	backupdir=`new_dir ~/backup-$today`
+	bindingdir="${bindingdir#/}"
+	backupdir="${backupdir#/}"
+#	packagecheck_b
+#	packagecheck_r
+	echoreden "You are about to backup your system. It is recommended that you quit all open applications now. Continue?(y/n)"
+	echoredcn "将要备份系统。建议退出其他程序。继续?(y/n)"
+	read yn
+	[ "$yn" != "y" ] && exit 1
+	echoreden "Specify an empty directory(absolute path) to save the backup. You can drag directory from Nautilus File Manager and drop it here. Feel free to use external media.
+If you don't specify, the backup will be saved to /$backupdir"
+	echoredcn "指定一个空目录 (绝对路径) 来存放备份。\n可以从 Nautilus 文件管理器拖放目录至此。\n可以使用移动硬盘。\n如果不指定, 将会存放到 /$backupdir"
+	read userdefined_backupdir
+	[ "$userdefined_backupdir" != "" ] && { userdefined_backupdir="`dequotepath "$userdefined_backupdir"`"; checkbackupdir "$userdefined_backupdir"; backupdir="${userdefined_backupdir#/}"; }
+
+	exclude=`new_dir /tmp/exclude`
+	echo $backupdir > $exclude
+	echo $bindingdir >> $exclude
+	echo boot/grub >> $exclude
+	echo etc/fstab >> $exclude
+	echo etc/mtab >> $exclude
+	echo etc/blkid.tab >> $exclude
+	echo etc/udev/rules.d/70-persistent-net.rules >> $exclude
+	echo lost+found >> $exclude
+	echo boot/lost+found >> $exclude
+	echo home/lost+found >> $exclude
+	echo tmp/lost+found >> $exclude
+	echo usr/lost+found >> $exclude
+	echo var/lost+found >> $exclude
+	echo srv/lost+found >> $exclude
+	echo opt/lost+found >> $exclude
+	echo usr/local/lost+found >> $exclude
+
+	for i in `swapon -s | grep file | cut -d " " -f 1`; do
+	echo "${i#/}" >> $exclude
+	done
+
+	for i in `ls /tmp -A`; do
+	echo "tmp/$i" >> $exclude
+	done
+
+	echoreden "Do you want to exclude all user files in /home? (y/n)"
+	echoredcn "是否排除 /home 里所有的用户文件? (y/n)"
+	read yn
+	if [ "$yn" = y ]; then
+	for i in /home/*; do
+	[ -f "$i" ] && echo "${i#/}" >> $exclude
+	[ -d "$i" ] || continue
+		for j in "$i"/*; do
+		[ -e "$j" ] && echo "${j#/}" >> $exclude
+		done
+	done
+	fi
+
+	echoreden "Do you want to exclude all user configurations (hidden files) in /home as well? (y/n)"
+	echoredcn "是否也排除 /home 里所有的用户配置文件(隐藏文件)? (y/n)"
+	read yn
+	if [ "$yn" = y ]; then
+	for i in /home/*; do
+	[ -d "$i" ] || continue
+		for j in "$i"/.*; do
+		[ "$j" = "$i/." ] && continue
+		[ "$j" = "$i/.." ] && continue
+		echo "${j#/}" >> $exclude
+		done
+	done
+	fi
+
+	echoreden "Do you want to exclude the local repository of retrieved package files in /var/cache/apt/archives/ ? (y/n)"
+	echoredcn "是否排除已下载软件包在 /var/cache/apt/archives/ 里的本地缓存 ? (y/n)"
+	read yn
+	if [ "$yn" = y ]; then
+	for i in /var/cache/apt/archives/*.deb; do
+	[ -e "$i" ] && echo "${i#/}" >> $exclude
+	done
+	for i in /var/cache/apt/archives/partial/*; do
+	[ -e "$i" ] && echo "${i#/}" >> $exclude
+	done
+	fi
+
+	echoreden "(For advanced users only) Specify other files/folders you want to exclude from the backup, one file/folder per line. You can drag and drop from Nautilus. End with an empty line.\nNote that the program has automatically excluded all removable media, windows partitions, manually mounted devices, files under /proc, /sys, /tmp, the /host contents of a wubi install, etc. So in most cases you can just hit enter now.\nIf you exclude important system files/folders, the backup will fail to restore."
+	echoredcn "(高级用户功能)指定其他需要排除的文件/目录, 一行写一个。以空行结束。\n可以从 Nautilus 文件管理器拖放至此。\n注意程序已经自动排除所有移动设备, windows 分区, 手动挂载的所有设备, /proc, /sys, /tmp 下的文件, wubi 的 /host 内容, 等等。\n所以在绝大多数情况下你只需要直接回车就可以了。\n如果你排除了重要的系统文件/目录, 不要指望你的备份能够工作。"
+	read ex
+	while [ "$ex" != "" ]; do
+	ex=`dequotepath "$ex"`
+	[ "${ex#/}" = "$ex" ] && { echoen "You must specify the absolute path"; echocn "请使用绝对路径"; read ex; continue; }
+	[ -e "$ex" ] || { echoen "$ex does not exist"; echocn "$ex 并不存在"; read ex; continue; }
+	ex="${ex#/}"
+	echo $ex >> $exclude
+	read ex
+	done
+
+	rebuildtree $bindingdir
+
+	for i in /$bindingdir/media/*; do
+	ls -ld "$i" | grep "^drwx------ " > /dev/null || continue
+	[ `ls -A "$i" | wc -l` = 0 ] || continue
+	echo "${i#/$bindingdir/}" >> $exclude
+	done
+
+	echoreden "Start to backup?(y/n)"
+	echoredcn "开始备份?(y/n)"
+	read yn
+	[ "$yn" != "y" ] && { destroytree $bindingdir; rm $exclude; exit 1; }
+	stime=`date`
+	mkdir -p "/$backupdir"
+	mksquashfs /$bindingdir "/$backupdir/backup$today.squashfs" -ef $exclude
+	destroytree $bindingdir
+	rm $exclude
+#	cp /boot/initrd.img-`uname -r` "/$backupdir"
+#	cp /boot/vmlinuz-`uname -r` "/$backupdir"
+#	sqshboot_grubcfg > "/$backupdir/grub.cfg"
+	thisuser=`basename ~`
+	chown -R $thisuser:$thisuser "/$backupdir" 2> /dev/null
+	echoreden "Your backup is ready in /$backupdir. :)"
+	echoreden " started at: $stime\nfinished at: `date`"
+	echoredcn "已备份至 /$backupdir。:)"
+	echoredcn "开始于: $stime\n结束于: `date`"
+	tput bel
+}
+
 dobackup(){
 	bindingdir=`new_dir /tmp/bind`
 	backupdir=`new_dir ~/backup-$today`
@@ -736,6 +860,90 @@ dorestore(){
 	echoredcn "搞定了 :)"
 }
 
+
+generate_fstab1(){
+	local targetfstab="$*/etc/fstab"
+
+	echo "# /etc/fstab: static file system information." > "$targetfstab"
+	echo "#" >> "$targetfstab"
+	echo "# <file system> <mount point>   <type>  <options>       <dump>  <pass>" >> "$targetfstab"
+	uuid="`$VOL_ID --uuid $part_root`"
+	partition="UUID=$uuid"
+	mntpnt="/"
+	fs="ext4"
+	mntoption="relatime,errors=remount-ro"
+	fsckorder="1"
+	echo "$partition $mntpnt $fs $mntoption 0 $fsckorder" >> "$targetfstab"
+}
+
+
+makeswapfile1(){
+	
+	swapsize=$SWAP_SIZE
+	local sf=`new_dir $*/swap.img`
+	echoreden "Generating swap file..."
+	dd if=/dev/zero of=$sf bs=1M count=$swapsize
+	mkswap $sf
+	echo "${sf#$*}  none  swap  sw  0 0" >> "$*/etc/fstab"
+}
+
+doinstall(){
+
+	CONF_FILE=/cdrom/config/lub_auto_install.conf
+	cd /root
+#	source config
+	if [ -f "$CONF_FILE" ]; then
+		echo "$CONF_FILE exist, continue"
+	else
+		echo "$CONF_FILE does not exist, exit"
+		exit 1
+	fi
+
+	source $CONF_FILE
+#	parted
+	echo "partition $INSTALL_DISK"
+	sudo ./partition.sh $INSTALL_DISK
+	part_root=$INSTALL_DISK'2'
+#	check uuid
+	chkuuids
+#	mkdir
+	echo "mk source and target dirs"
+	dir_source=/mnt/source
+	dir_target=/mnt/target
+	mkdir $dir_source
+	mkdir $dir_target
+
+#	mount source and target to dir
+	echo "mount source file and target disk to dirs"
+	mount $part_root $dir_target
+	mount -t squashfs $INSTALL_FILE $dir_source
+
+#	start to install
+	echo "copy files to target dir"
+	cp -av $dir_source/* $dir_target
+	
+#	resume
+	rm -f $dir_target/etc/initramfs-tools/conf.d/resume
+	touch $dir_target/etc/mtab
+	echo "generate fstab"
+	generate_fstab1 "$dir_target"
+	echo "update initramfs"
+	target_cmd "$dir_target" update-initramfs -u
+
+#	install grub
+	echo "grub install: installing grub to part $INSTALL_DISK"
+	grub-install --boot-directory=$dir_target/boot $INSTALL_DISK
+	echo "grub mkconfig: making grub.cfg to $dir_target/boot/grub"
+	target_cmd "$dir_target" grub-mkconfig -o /boot/grub/grub.cfg
+
+	makeswapfile1 $dir_target
+#	compete
+	echo "umount source and target dirs"
+	umount $dir_target
+	umount $dir_source
+	echo "installation complete, please repower and remove usb stick"
+}
+
 echohelpen(){
 [ $lang = "en" ] && echo "This program can backup your running ubuntu system to a compressed, bootable squashfs file. When you want to restore, boot the squashfs backup and run this program again. You can also restore the backup to another machine. And with this script you can migrate ubuntu system on a virtual machine to physical partitions.
 
@@ -771,12 +979,14 @@ ls /sbin/vol_id > /dev/null 2>&1 && VOL_ID=vol_id || VOL_ID=VOL_ID
 echo "live ubuntu backup and restore"
 ##read lang
 ##[ "$lang" = "c" ] && lang=cn || lang=en
-lang=cn
+lang=en
 [ "$lang" = "cn" ] && today=`date +%Y.%m.%d` || today=`date +%d.%m.%Y`
 [ "$lang" = "cn" ] && version="V2.2, 2009年11月4日" || version="V2.2, Nov 4th,2009"
 [ "$*" = -h ] && { echoen "Root privileges are required for running this program.";echocn "备份和恢复需要 root 权限。";echohelpen; echohelpcn; exit 0; }
-[ "$*" = -b ] && { dobackup; exit 0; }
+[ "$*" = -l ] && { dobackup; exit 0; }
 [ "$*" = -r ] && { dorestore; exit 0; }
+[ "$*" = -i ] && { doinstall; exit 0; }
+[ "$*" = -b ] && { dobackup1; exit 0; }
 [ "$*" = -t ] && { sqshboot_grubcfg > "grub.cfg"; exit 0; }
 exit 1
 
